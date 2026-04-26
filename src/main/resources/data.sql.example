@@ -1,0 +1,58 @@
+-- =============================================
+-- Example seed data for xavierarbat-back
+-- Copy this file as data.sql and customize with your own data:
+--   cp src/main/resources/data.sql.example src/main/resources/data.sql
+--
+-- Run on every startup — all inserts are idempotent (ON CONFLICT DO NOTHING)
+-- =============================================
+
+-- =============================================
+-- Contacts (name IS the PK)
+-- =============================================
+INSERT INTO contact (name, display, value, link, show_in_footer) VALUES
+('email',     '{"es": "Email", "ca": "Email", "en": "Email"}', 'your-email@example.com', 'mailto:your-email@example.com', false),
+('github',    '{"es": "GitHub", "ca": "GitHub", "en": "GitHub"}', '@your-username', 'https://github.com/your-username', true),
+('linkedin',  '{"es": "LinkedIn", "ca": "LinkedIn", "en": "LinkedIn"}', 'Your Name', 'https://www.linkedin.com/in/your-name', true),
+('instagram', '{"es": "Instagram", "ca": "Instagram", "en": "Instagram"}', '@your-username', 'https://www.instagram.com/your-username/', true)
+ON CONFLICT (name) DO NOTHING;
+
+-- =============================================
+-- Projects (slug as PK, alt_images as JSONB array)
+-- =============================================
+INSERT INTO project (slug, date, image, title, description, content, image_display, aspect_ratio, alt_images) VALUES
+('sample-illustration', '2024-01-15', '/images/projects/sample_00.jpg',
+ '{"es": "Ilustración de Ejemplo", "ca": "Il·lustració d''Exemple", "en": "Sample Illustration"}',
+ '{"es": "Una ilustración de demostración.", "ca": "Una il·lustració de demostració.", "en": "A sample illustration for demo purposes."}',
+ '{"es": "Contenido detallado aquí.", "ca": "Contingut detallat aquí.", "en": "Detailed content goes here."}',
+ 'COVER', 'PORTRAIT', '[]'),
+('another-project', '2023-06-10', '/images/projects/another_00.jpg',
+ '{"es": "Otro Proyecto", "ca": "Un Altre Projecte", "en": "Another Project"}',
+ '{"es": "Descripción del segundo proyecto.", "ca": "Descripció del segon projecte.", "en": "Description of the second project."}',
+ '{"es": "", "ca": "", "en": ""}',
+ 'COVER', 'FOURTHIRDS', '["/images/projects/another_01.jpg"]')
+ON CONFLICT (slug) DO NOTHING;
+
+-- =============================================
+-- Project tags
+-- =============================================
+INSERT INTO project_tag (project_slug, tag)
+SELECT v.project_slug, v.tag FROM (VALUES
+  ('sample-illustration', 'ILLUSTRATION'),
+  ('sample-illustration', 'INK'),
+  ('another-project', 'ILLUSTRATION'),
+  ('another-project', 'FAN_ART')
+) AS v(project_slug, tag)
+WHERE NOT EXISTS (
+  SELECT 1 FROM project_tag pt
+  WHERE pt.project_slug = v.project_slug AND pt.tag = v.tag
+);
+
+-- =============================================
+-- Blog
+-- =============================================
+INSERT INTO blog (slug, date, title, description, content) VALUES
+('my-first-post', '2024-01-01',
+ '{"es": "Mi primer post", "ca": "El meu primer post", "en": "My first post"}',
+ '{"es": "Una breve descripción del post.", "ca": "Una breu descripció del post.", "en": "A short description of the post."}',
+ '{"es": "Aquí va el contenido completo en **markdown**.", "ca": "Aquí va el contingut complet en **markdown**.", "en": "Here goes the full content in **markdown**."}')
+ON CONFLICT (slug) DO NOTHING;

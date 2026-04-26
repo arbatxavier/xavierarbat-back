@@ -1,0 +1,64 @@
+package com.xavierarbat.xavierarbatback.service
+
+import com.xavierarbat.xavierarbatback.domain.Project
+import com.xavierarbat.xavierarbatback.domain.enums.AspectRatio
+import com.xavierarbat.xavierarbatback.domain.enums.ImageDisplay
+import com.xavierarbat.xavierarbatback.domain.enums.TagKey
+import com.xavierarbat.xavierarbatback.dto.*
+import com.xavierarbat.xavierarbatback.exception.ResourceNotFoundException
+import com.xavierarbat.xavierarbatback.repository.ProjectRepository
+import org.springframework.stereotype.Service
+
+@Service
+class ProjectService(private val projectRepository: ProjectRepository) {
+
+    fun findAll(lang: String): List<ProjectListDto> =
+        projectRepository.findAll().map { it.toListDto(lang) }
+
+    fun findBySlug(slug: String, lang: String): ProjectDetailDto? =
+        projectRepository.findById(slug).orElse(null)?.toDetailDto(lang)
+
+    fun create(request: ProjectCreateRequest): Project {
+        if (projectRepository.existsById(request.slug)) {
+            throw IllegalArgumentException("Project with slug '${request.slug}' already exists")
+        }
+        val project = Project(
+            slug = request.slug,
+            date = request.date,
+            image = request.image,
+            title = request.title,
+            description = request.description,
+            content = request.content,
+            tags = request.tags.map { TagKey.valueOf(it) }.toSet(),
+            imageDisplay = ImageDisplay.valueOf(request.imageDisplay),
+            aspectRatio = AspectRatio.valueOf(request.aspectRatio),
+            altImages = request.altImages
+        )
+        return projectRepository.save(project)
+    }
+
+    fun update(slug: String, request: ProjectUpdateRequest): Project {
+        val existing = projectRepository.findById(slug).orElseThrow {
+            ResourceNotFoundException("Project not found: $slug")
+        }
+        val updated = existing.copy(
+            date = request.date ?: existing.date,
+            image = request.image ?: existing.image,
+            title = request.title ?: existing.title,
+            description = request.description ?: existing.description,
+            content = request.content ?: existing.content,
+            tags = request.tags?.map { TagKey.valueOf(it) }?.toSet() ?: existing.tags,
+            imageDisplay = request.imageDisplay?.let { ImageDisplay.valueOf(it) } ?: existing.imageDisplay,
+            aspectRatio = request.aspectRatio?.let { AspectRatio.valueOf(it) } ?: existing.aspectRatio,
+            altImages = request.altImages ?: existing.altImages
+        )
+        return projectRepository.save(updated)
+    }
+
+    fun delete(slug: String) {
+        if (!projectRepository.existsById(slug)) {
+            throw ResourceNotFoundException("Project not found: $slug")
+        }
+        projectRepository.deleteById(slug)
+    }
+}
