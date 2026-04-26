@@ -1,0 +1,8 @@
+.git
+.gitignore
+pgdata/
+*.md
+.env
+.env.*
+build/
+.gradle/
