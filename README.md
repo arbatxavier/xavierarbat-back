@@ -108,17 +108,17 @@ curl -X POST http://localhost:8080/api/v1/blogs \
 
 Key settings in `src/main/resources/application.properties`:
 
-| Property | Default | Description |
-|----------|---------|-------------|
-| `app.api-key` | `change-me-in-production` | API key for protected endpoints |
-| `spring.datasource.url` | `jdbc:postgresql://localhost:5432/xavierarbat_db` | Database URL |
-| `spring.datasource.username` | `user` | Database user |
-| `spring.datasource.password` | `password` | Database password |
+| Property | Default | Env Variable | Description |
+|----------|---------|--------------|-------------|
+| `app.api-key` | `change-me-in-production` | `API_KEY` | API key for protected endpoints |
+| `spring.datasource.url` | `localhost:5432` | `DB_HOST` | Database host |
+| `spring.datasource.username` | `user` | `DB_USER` | Database user |
+| `spring.datasource.password` | `password` | `DB_PASSWORD` | Database password |
 
-In production, override the API key via environment variable:
+In production, override via environment variables:
 
 ```bash
-API_KEY=your-secret-key ./gradlew bootRun
+DB_HOST=localhost DB_USER=myuser DB_PASSWORD=strong-password API_KEY=your-secret-key ./gradlew bootRun
 ```
 
 ## Security
