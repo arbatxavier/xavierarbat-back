@@ -10,6 +10,7 @@ Supports i18n (es/ca/en) via JSONB fields and `Accept-Language` header.
 - **Spring Data JPA** + **Hibernate** 7
 - **PostgreSQL** 16 (via Docker)
 - **Spring Security** 7 (API Key authentication)
+- **SpringDoc OpenAPI** 3.0 (Swagger UI live docs)
 
 ## Prerequisites
 
@@ -159,15 +160,82 @@ All text fields (title, description, content, display) are stored as JSONB maps:
 
 The API resolves the language from the `Accept-Language` header with fallback: requested lang -> `en` -> first available.
 
+## Image Uploads
+
+Images are stored on a persistent volume and served as static files.
+
+### Storage structure
+
+```
+/app/uploads/
+├── projects/    # Project images
+├── blogs/       # Blog post images
+└── contacts/    # Contact avatars/icons
+```
+
+In production (Coolify), the volume maps `/var/www/xavierarbat/uploads` (host) to `/app/uploads` (container), so images persist across deployments.
+
+For local development, set the `UPLOADS_PATH` environment variable:
+
+```bash
+UPLOADS_PATH=./uploads ./gradlew bootRun
+```
+
+### Upload constraints
+
+| Constraint | Value |
+|------------|-------|
+| Max file size | 20 MB |
+| Allowed types | `image/jpeg`, `image/png`, `image/webp`, `image/gif`, `image/svg+xml` |
+| Filename handling | Original name preserved, sanitized (unsafe chars replaced with `_`) |
+| Collision handling | Numeric suffix added (`image_1.jpg`, `image_2.jpg`, ...) |
+
+### Usage examples
+
+```bash
+# Upload an image to the projects folder
+curl -X POST https://api.xavierarbat.com/api/v1/images/projects \
+  -H "X-API-Key: your-secret-key" \
+  -F "file=@my-artwork.jpg"
+# Response: {"url": "/uploads/projects/my-artwork.jpg"}
+
+# Access the image (public, no auth needed)
+# https://api.xavierarbat.com/uploads/projects/my-artwork.jpg
+
+# List all images in the projects folder
+curl https://api.xavierarbat.com/api/v1/images/projects
+# Response: ["/uploads/projects/my-artwork.jpg", "/uploads/projects/another.png"]
+
+# Delete an image
+curl -X DELETE https://api.xavierarbat.com/api/v1/images/projects/my-artwork.jpg \
+  -H "X-API-Key: your-secret-key"
+```
+
+### Using image URLs in entities
+
+When creating a project or blog, reference the uploaded image path:
+
+```json
+{
+  "slug": "my-project",
+  "date": "2026-04-27",
+  "image": "/uploads/projects/my-artwork.jpg",
+  "title": {"en": "My Project"},
+  "description": {"en": "Description"},
+  "content": {"en": "Content"},
+  "altImages": ["/uploads/projects/detail-1.jpg", "/uploads/projects/detail-2.jpg"]
+}
+```
+
 ## Project Structure
 
 ```
 src/main/kotlin/com/xavierarbat/xavierarbatback/
-├── config/          # CORS, Security, Rate Limiter, Error Handler, JPA Converters
-├── controller/      # REST controllers (Blog, Contact, Project)
+├── config/          # CORS, Security, Rate Limiter, Error Handler, JPA Converters, OpenAPI
+├── controller/      # REST controllers (Blog, Contact, Project, Image)
 ├── domain/          # JPA entities and enums
 ├── dto/             # Data Transfer Objects and mappers
 ├── exception/       # Custom exceptions
 ├── repository/      # Spring Data JPA repositories
-└── service/         # Business logic
+└── service/         # Business logic (including image storage)
 ```
