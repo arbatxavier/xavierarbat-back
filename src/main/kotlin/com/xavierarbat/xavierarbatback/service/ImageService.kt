@@ -24,7 +24,7 @@ class ImageService(
 
     private val allowedTypes: Set<String> by lazy { allowedTypesRaw.split(",").map { it.trim() }.toSet() }
 
-    private val validFolders = setOf("projects", "blogs", "contacts")
+    private val validFolders = setOf("projects", "blogs", "contacts", "home")
 
     @PostConstruct
     fun init() {

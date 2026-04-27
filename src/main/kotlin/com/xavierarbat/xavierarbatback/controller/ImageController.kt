@@ -23,7 +23,7 @@ class ImageController(private val imageService: ImageService) {
     @PostMapping("/{folder}", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
     @Operation(
         summary = "Upload an image",
-        description = "Uploads an image to the specified folder (projects, blogs, contacts). Max 20 MB. Allowed types: JPEG, PNG, WebP, GIF, SVG.",
+        description = "Uploads an image to the specified folder (projects, blogs, contacts, home). Max 20 MB. Allowed types: JPEG, PNG, WebP, GIF, SVG.",
         security = [SecurityRequirement(name = "ApiKeyAuth")],
         responses = [
             ApiResponse(responseCode = "201", description = "Image uploaded, returns the public URL path"),
@@ -32,7 +32,7 @@ class ImageController(private val imageService: ImageService) {
         ]
     )
     fun upload(
-        @Parameter(description = "Target folder: projects, blogs, or contacts", example = "projects")
+        @Parameter(description = "Target folder: projects, blogs, contacts, or home", example = "projects")
         @PathVariable folder: String,
         @RequestPart("file") file: MultipartFile
     ): ResponseEntity<Map<String, String>> {
@@ -47,7 +47,7 @@ class ImageController(private val imageService: ImageService) {
         security = []
     )
     fun list(
-        @Parameter(description = "Folder: projects, blogs, or contacts", example = "projects")
+        @Parameter(description = "Folder: projects, blogs, contacts, or home", example = "projects")
         @PathVariable folder: String
     ): List<String> {
         return imageService.listFiles(folder)
