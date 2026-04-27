@@ -1,8 +1,10 @@
 package com.xavierarbat.xavierarbatback.controller
 
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestMethodOrder
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -17,6 +19,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ProjectCrudTest {
 
     @Autowired
@@ -27,6 +30,18 @@ class ProjectCrudTest {
 
     companion object {
         private const val TEST_SLUG = "test-project-crud"
+    }
+
+    @BeforeAll
+    fun seedTags() {
+        listOf("ILLUSTRATION", "INK", "FAN_ART").forEach { tag ->
+            mockMvc.perform(
+                post("/api/v1/tags")
+                    .header("X-API-Key", apiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("""{"key": "$tag"}""")
+            ) // ignore if already exists
+        }
     }
 
     private val createBody = """

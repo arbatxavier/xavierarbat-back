@@ -3,14 +3,16 @@ package com.xavierarbat.xavierarbatback.service
 import com.xavierarbat.xavierarbatback.domain.Project
 import com.xavierarbat.xavierarbatback.domain.enums.AspectRatio
 import com.xavierarbat.xavierarbatback.domain.enums.ImageDisplay
-import com.xavierarbat.xavierarbatback.domain.enums.TagKey
 import com.xavierarbat.xavierarbatback.dto.*
 import com.xavierarbat.xavierarbatback.exception.ResourceNotFoundException
 import com.xavierarbat.xavierarbatback.repository.ProjectRepository
 import org.springframework.stereotype.Service
 
 @Service
-class ProjectService(private val projectRepository: ProjectRepository) {
+class ProjectService(
+    private val projectRepository: ProjectRepository,
+    private val tagService: TagService
+) {
 
     fun findAll(lang: String): List<ProjectListDto> =
         projectRepository.findAll().map { it.toListDto(lang) }
@@ -22,6 +24,7 @@ class ProjectService(private val projectRepository: ProjectRepository) {
         if (projectRepository.existsById(request.slug)) {
             throw IllegalArgumentException("Project with slug '${request.slug}' already exists")
         }
+        val tags = tagService.resolveTagsByKeys(request.tags)
         val project = Project(
             slug = request.slug,
             date = request.date,
@@ -29,7 +32,7 @@ class ProjectService(private val projectRepository: ProjectRepository) {
             title = request.title,
             description = request.description,
             content = request.content,
-            tags = request.tags.map { TagKey.valueOf(it) }.toSet(),
+            tags = tags,
             imageDisplay = ImageDisplay.valueOf(request.imageDisplay),
             aspectRatio = AspectRatio.valueOf(request.aspectRatio),
             altImages = request.altImages
@@ -47,7 +50,7 @@ class ProjectService(private val projectRepository: ProjectRepository) {
             title = request.title ?: existing.title,
             description = request.description ?: existing.description,
             content = request.content ?: existing.content,
-            tags = request.tags?.map { TagKey.valueOf(it) }?.toSet() ?: existing.tags,
+            tags = request.tags?.let { tagService.resolveTagsByKeys(it) } ?: existing.tags,
             imageDisplay = request.imageDisplay?.let { ImageDisplay.valueOf(it) } ?: existing.imageDisplay,
             aspectRatio = request.aspectRatio?.let { AspectRatio.valueOf(it) } ?: existing.aspectRatio,
             altImages = request.altImages ?: existing.altImages

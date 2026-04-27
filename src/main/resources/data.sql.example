@@ -7,6 +7,27 @@
 -- =============================================
 
 -- =============================================
+-- Tags (key IS the PK)
+-- =============================================
+INSERT INTO tag (key, label) VALUES
+('ILLUSTRATION', 'Illustration'),
+('INK', 'Ink'),
+('FAN_ART', 'Fan Art'),
+('ANIME', 'Anime'),
+('MANGA', 'Manga'),
+('PORTRAIT', 'Portrait'),
+('CINEMA', 'Cinema'),
+('HORROR', 'Horror'),
+('CONCEPT', 'Concept'),
+('ANIMALS', 'Animals'),
+('TECHNIQUE', 'Technique'),
+('POINTILLISM', 'Pointillism'),
+('LITERATURE', 'Literature'),
+('SKULL', 'Skull'),
+('REALISM', 'Realism')
+ON CONFLICT (key) DO NOTHING;
+
+-- =============================================
 -- Contacts (name IS the PK)
 -- =============================================
 INSERT INTO contact (name, display, value, link, show_in_footer) VALUES
@@ -33,18 +54,18 @@ INSERT INTO project (slug, date, image, title, description, content, image_displ
 ON CONFLICT (slug) DO NOTHING;
 
 -- =============================================
--- Project tags
+-- Project tags (join table: project_slug <-> tag_key)
 -- =============================================
-INSERT INTO project_tag (project_slug, tag)
-SELECT v.project_slug, v.tag FROM (VALUES
+INSERT INTO project_tag (project_slug, tag_key)
+SELECT v.project_slug, v.tag_key FROM (VALUES
   ('sample-illustration', 'ILLUSTRATION'),
   ('sample-illustration', 'INK'),
   ('another-project', 'ILLUSTRATION'),
   ('another-project', 'FAN_ART')
-) AS v(project_slug, tag)
+) AS v(project_slug, tag_key)
 WHERE NOT EXISTS (
   SELECT 1 FROM project_tag pt
-  WHERE pt.project_slug = v.project_slug AND pt.tag = v.tag
+  WHERE pt.project_slug = v.project_slug AND pt.tag_key = v.tag_key
 );
 
 -- =============================================

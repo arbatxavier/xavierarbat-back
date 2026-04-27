@@ -4,7 +4,6 @@ import com.xavierarbat.xavierarbatback.config.JsonbListConverter
 import com.xavierarbat.xavierarbatback.config.JsonbMapConverter
 import com.xavierarbat.xavierarbatback.domain.enums.AspectRatio
 import com.xavierarbat.xavierarbatback.domain.enums.ImageDisplay
-import com.xavierarbat.xavierarbatback.domain.enums.TagKey
 import jakarta.persistence.*
 import java.time.LocalDate
 
@@ -33,11 +32,13 @@ data class Project(
     @Column(columnDefinition = "jsonb", nullable = false)
     val content: Map<String, String> = emptyMap(),
 
-    @ElementCollection(targetClass = TagKey::class, fetch = FetchType.EAGER)
-    @CollectionTable(name = "project_tag", joinColumns = [JoinColumn(name = "project_slug")])
-    @Enumerated(EnumType.STRING)
-    @Column(name = "tag")
-    val tags: Set<TagKey> = emptySet(),
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "project_tag",
+        joinColumns = [JoinColumn(name = "project_slug")],
+        inverseJoinColumns = [JoinColumn(name = "tag_key")]
+    )
+    val tags: Set<Tag> = emptySet(),
 
     @Enumerated(EnumType.STRING)
     @Column(name = "image_display", nullable = false)

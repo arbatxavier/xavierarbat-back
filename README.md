@@ -78,6 +78,8 @@ The raw OpenAPI 3.1 spec (JSON) is at `/v3/api-docs`.
 | `GET` | `/api/v1/blogs` | List all blog posts |
 | `GET` | `/api/v1/blogs/{slug}` | Get blog post detail |
 | `GET` | `/api/v1/contacts` | List all contacts |
+| `GET` | `/api/v1/tags` | List all tags |
+| `GET` | `/api/v1/tags/{key}` | Get a tag by key |
 | `GET` | `/api/v1/images/{folder}` | List images in folder |
 | `GET` | `/uploads/{folder}/{filename}` | Serve an image file |
 
@@ -96,6 +98,9 @@ All GET endpoints accept an `Accept-Language` header (`en`, `es`, `ca`). Default
 | `POST` | `/api/v1/contacts` | Create a contact |
 | `PUT` | `/api/v1/contacts/{name}` | Update a contact |
 | `DELETE` | `/api/v1/contacts/{name}` | Delete a contact |
+| `POST` | `/api/v1/tags` | Create a tag |
+| `PUT` | `/api/v1/tags/{key}` | Update a tag label |
+| `DELETE` | `/api/v1/tags/{key}` | Delete a tag |
 | `POST` | `/api/v1/images/{folder}` | Upload an image (multipart) |
 | `DELETE` | `/api/v1/images/{folder}/{filename}` | Delete an image |
 
@@ -159,6 +164,44 @@ All text fields (title, description, content, display) are stored as JSONB maps:
 ```
 
 The API resolves the language from the `Accept-Language` header with fallback: requested lang -> `en` -> first available.
+
+## Tags
+
+Tags are stored in the database and can be managed via the API. Projects reference tags by key through a many-to-many relationship.
+
+Each tag has a `key` (PK, uppercase with underscores) and a human-readable `label`.
+
+```bash
+# List all available tags
+curl https://api.xavierarbat.com/api/v1/tags
+# Response: [{"key": "ILLUSTRATION", "label": "Illustration"}, ...]
+
+# Create a new tag (key is auto-normalized to uppercase)
+curl -X POST https://api.xavierarbat.com/api/v1/tags \
+  -H "X-API-Key: your-secret-key" \
+  -H "Content-Type: application/json" \
+  -d '{"key": "WATERCOLOR", "label": "Watercolor"}'
+
+# Update a tag label
+curl -X PUT https://api.xavierarbat.com/api/v1/tags/WATERCOLOR \
+  -H "X-API-Key: your-secret-key" \
+  -H "Content-Type: application/json" \
+  -d '{"label": "Aquarelle"}'
+
+# Delete a tag
+curl -X DELETE https://api.xavierarbat.com/api/v1/tags/WATERCOLOR \
+  -H "X-API-Key: your-secret-key"
+```
+
+When creating or updating a project, reference tags by their key:
+
+```json
+{
+  "tags": ["ILLUSTRATION", "INK", "WATERCOLOR"]
+}
+```
+
+If a tag key does not exist, the API returns a `400` error listing the unknown keys.
 
 ## Image Uploads
 
