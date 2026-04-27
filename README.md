@@ -77,6 +77,8 @@ The raw OpenAPI 3.1 spec (JSON) is at `/v3/api-docs`.
 | `GET` | `/api/v1/blogs` | List all blog posts |
 | `GET` | `/api/v1/blogs/{slug}` | Get blog post detail |
 | `GET` | `/api/v1/contacts` | List all contacts |
+| `GET` | `/api/v1/images/{folder}` | List images in folder |
+| `GET` | `/uploads/{folder}/{filename}` | Serve an image file |
 
 All GET endpoints accept an `Accept-Language` header (`en`, `es`, `ca`). Defaults to `en`.
 
@@ -93,6 +95,8 @@ All GET endpoints accept an `Accept-Language` header (`en`, `es`, `ca`). Default
 | `POST` | `/api/v1/contacts` | Create a contact |
 | `PUT` | `/api/v1/contacts/{name}` | Update a contact |
 | `DELETE` | `/api/v1/contacts/{name}` | Delete a contact |
+| `POST` | `/api/v1/images/{folder}` | Upload an image (multipart) |
+| `DELETE` | `/api/v1/images/{folder}/{filename}` | Delete an image |
 
 ### Example requests
 
@@ -111,6 +115,14 @@ curl -X POST http://localhost:8080/api/v1/blogs \
     "description": {"en": "Short desc.", "es": "Desc corta.", "ca": "Desc curta."},
     "content": {"en": "Full **markdown** content.", "es": "Contenido en **markdown**.", "ca": "Contingut en **markdown**."}
   }'
+
+# Upload an image (requires API key)
+curl -X POST http://localhost:8080/api/v1/images/projects \
+  -H "X-API-Key: change-me-in-production" \
+  -F "file=@/path/to/image.jpg"
+
+# Serve an uploaded image (public)
+curl http://localhost:8080/uploads/projects/image.jpg
 ```
 
 ## Configuration
@@ -123,6 +135,7 @@ Key settings in `src/main/resources/application.properties`:
 | `spring.datasource.url` | `localhost:5432` | `DB_HOST` | Database host |
 | `spring.datasource.username` | `user` | `DB_USER` | Database user |
 | `spring.datasource.password` | `password` | `DB_PASSWORD` | Database password |
+| `app.uploads.path` | `/app/uploads` | `UPLOADS_PATH` | Path for uploaded images |
 
 In production, override via environment variables:
 
