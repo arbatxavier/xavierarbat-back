@@ -26,6 +26,14 @@ CREATE TABLE IF NOT EXISTS contact (
 );
 
 -- =============================================
+-- Tags
+-- =============================================
+CREATE TABLE IF NOT EXISTS tag (
+    key   VARCHAR(50)  PRIMARY KEY,
+    label VARCHAR(100) NOT NULL
+);
+
+-- =============================================
 -- Projects
 -- =============================================
 CREATE TABLE IF NOT EXISTS project (
@@ -41,10 +49,14 @@ CREATE TABLE IF NOT EXISTS project (
 );
 
 -- =============================================
--- Project tags (EnumSet stored as separate rows)
+-- Project tags (dynamic — references tag table)
 -- =============================================
 CREATE TABLE IF NOT EXISTS project_tag (
     project_slug VARCHAR(255) NOT NULL REFERENCES project(slug) ON DELETE CASCADE,
-    tag          VARCHAR(50)  NOT NULL,
-    PRIMARY KEY (project_slug, tag)
+    tag_key      VARCHAR(50)  NOT NULL REFERENCES tag(key) ON DELETE CASCADE,
+    PRIMARY KEY (project_slug, tag_key)
 );
+
+-- Drop any auto-generated check constraint on tag values
+-- (Hibernate ddl-auto=update may create these; we use a FK to tag table instead)
+ALTER TABLE project_tag DROP CONSTRAINT IF EXISTS project_tag_tag_check;
