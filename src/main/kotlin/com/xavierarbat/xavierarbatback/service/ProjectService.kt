@@ -7,6 +7,7 @@ import com.xavierarbat.xavierarbatback.dto.*
 import com.xavierarbat.xavierarbatback.exception.ResourceNotFoundException
 import com.xavierarbat.xavierarbatback.repository.ProjectRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class ProjectService(
@@ -20,6 +21,7 @@ class ProjectService(
     fun findBySlug(slug: String, lang: String): ProjectDetailDto? =
         projectRepository.findById(slug).orElse(null)?.toDetailDto(lang)
 
+    @Transactional
     fun create(request: ProjectCreateRequest): Project {
         if (projectRepository.existsById(request.slug)) {
             throw IllegalArgumentException("Project with slug '${request.slug}' already exists")
@@ -40,6 +42,7 @@ class ProjectService(
         return projectRepository.save(project)
     }
 
+    @Transactional
     fun update(slug: String, request: ProjectUpdateRequest): Project {
         val existing = projectRepository.findById(slug).orElseThrow {
             ResourceNotFoundException("Project not found: $slug")
@@ -58,6 +61,7 @@ class ProjectService(
         return projectRepository.save(updated)
     }
 
+    @Transactional
     fun delete(slug: String) {
         if (!projectRepository.existsById(slug)) {
             throw ResourceNotFoundException("Project not found: $slug")
