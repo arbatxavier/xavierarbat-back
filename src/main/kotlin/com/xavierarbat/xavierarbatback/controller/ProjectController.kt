@@ -5,23 +5,48 @@ import com.xavierarbat.xavierarbatback.commons.LocaleUtils.parseLang
 import com.xavierarbat.xavierarbatback.dto.*
 import com.xavierarbat.xavierarbatback.exception.ResourceNotFoundException
 import com.xavierarbat.xavierarbatback.service.ProjectService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/projects")
+@Tag(name = "Projects", description = "CRUD operations for portfolio projects")
 class ProjectController(private val projectService: ProjectService) {
 
     @GetMapping("", "/")
-    fun list(@RequestHeader("Accept-Language", defaultValue = DEFAULT_LANGUAGE_CODE) acceptLanguage: String): List<ProjectListDto> {
+    @Operation(
+        summary = "List all projects",
+        description = "Returns a list of all projects with localized title, description, and image. Language is resolved from Accept-Language header.",
+        security = []
+    )
+    fun list(
+        @Parameter(description = "Language code (en, es, ca)", example = "en")
+        @RequestHeader("Accept-Language", defaultValue = DEFAULT_LANGUAGE_CODE) acceptLanguage: String
+    ): List<ProjectListDto> {
         val lang = parseLang(acceptLanguage)
         return projectService.findAll(lang)
     }
 
     @GetMapping("/{slug}")
+    @Operation(
+        summary = "Get project detail",
+        description = "Returns full project detail including content, tags, and alternative images.",
+        security = [],
+        responses = [
+            ApiResponse(responseCode = "200", description = "Project found"),
+            ApiResponse(responseCode = "404", description = "Project not found")
+        ]
+    )
     fun detail(
+        @Parameter(description = "Project slug (URL-friendly identifier)", example = "berserk-tribute-ink")
         @PathVariable slug: String,
+        @Parameter(description = "Language code (en, es, ca)", example = "en")
         @RequestHeader("Accept-Language", defaultValue = DEFAULT_LANGUAGE_CODE) acceptLanguage: String
     ): ProjectDetailDto {
         val lang = parseLang(acceptLanguage)
@@ -30,6 +55,16 @@ class ProjectController(private val projectService: ProjectService) {
     }
 
     @PostMapping("", "/")
+    @Operation(
+        summary = "Create a project",
+        description = "Creates a new project. Requires API key authentication.",
+        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        responses = [
+            ApiResponse(responseCode = "201", description = "Project created"),
+            ApiResponse(responseCode = "400", description = "Invalid request or slug already exists"),
+            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+        ]
+    )
     fun create(@RequestBody request: ProjectCreateRequest): ResponseEntity<ProjectDetailDto> {
         val project = projectService.create(request)
         val dto = project.toDetailDto("en")
@@ -37,7 +72,18 @@ class ProjectController(private val projectService: ProjectService) {
     }
 
     @PutMapping("/{slug}")
+    @Operation(
+        summary = "Update a project",
+        description = "Updates an existing project. Only provided fields are updated. Requires API key authentication.",
+        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        responses = [
+            ApiResponse(responseCode = "200", description = "Project updated"),
+            ApiResponse(responseCode = "404", description = "Project not found"),
+            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+        ]
+    )
     fun update(
+        @Parameter(description = "Project slug", example = "berserk-tribute-ink")
         @PathVariable slug: String,
         @RequestBody request: ProjectUpdateRequest
     ): ProjectDetailDto {
@@ -47,7 +93,19 @@ class ProjectController(private val projectService: ProjectService) {
 
     @DeleteMapping("/{slug}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun delete(@PathVariable slug: String) {
+    @Operation(
+        summary = "Delete a project",
+        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        responses = [
+            ApiResponse(responseCode = "204", description = "Project deleted"),
+            ApiResponse(responseCode = "404", description = "Project not found"),
+            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+        ]
+    )
+    fun delete(
+        @Parameter(description = "Project slug", example = "berserk-tribute-ink")
+        @PathVariable slug: String
+    ) {
         projectService.delete(slug)
     }
 }

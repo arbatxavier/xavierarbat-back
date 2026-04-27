@@ -26,6 +26,9 @@ class SecurityConfig(
             csrf { disable() }
             sessionManagement { sessionCreationPolicy = SessionCreationPolicy.STATELESS }
             authorizeHttpRequests {
+                authorize("/swagger-ui/**", permitAll)
+                authorize("/swagger-ui.html", permitAll)
+                authorize("/v3/api-docs/**", permitAll)
                 authorize(HttpMethod.GET, "/api/**", permitAll)
                 authorize(HttpMethod.OPTIONS, "/api/**", permitAll)
                 authorize(HttpMethod.POST, "/api/**", hasRole("ADMIN"))

@@ -49,7 +49,16 @@ The schema is created automatically by Hibernate on startup (`ddl-auto=update`).
 
 The API starts at `http://localhost:8080`.
 
-### 4. Run tests
+### 4. API Documentation (Swagger UI)
+
+Interactive API documentation is available at:
+
+- **Local:** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- **Production:** [https://api.xavierarbat.com/swagger-ui.html](https://api.xavierarbat.com/swagger-ui.html)
+
+The raw OpenAPI 3.1 spec (JSON) is at `/v3/api-docs`.
+
+### 5. Run tests
 
 ```bash
 ./gradlew test

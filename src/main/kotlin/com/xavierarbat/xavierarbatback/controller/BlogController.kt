@@ -5,23 +5,42 @@ import com.xavierarbat.xavierarbatback.commons.LocaleUtils.parseLang
 import com.xavierarbat.xavierarbatback.dto.*
 import com.xavierarbat.xavierarbatback.exception.ResourceNotFoundException
 import com.xavierarbat.xavierarbatback.service.BlogService
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/blogs")
+@Tag(name = "Blogs", description = "CRUD operations for blog posts")
 class BlogController(private val blogService: BlogService) {
 
     @GetMapping("", "/")
-    fun list(@RequestHeader("Accept-Language", defaultValue = DEFAULT_LANGUAGE_CODE) acceptLanguage: String): List<BlogListDto> {
+    @Operation(summary = "List all blog posts", security = [])
+    fun list(
+        @Parameter(description = "Language code (en, es, ca)", example = "en")
+        @RequestHeader("Accept-Language", defaultValue = DEFAULT_LANGUAGE_CODE) acceptLanguage: String
+    ): List<BlogListDto> {
         val lang = parseLang(acceptLanguage)
         return blogService.findAll(lang)
     }
 
     @GetMapping("/{slug}")
+    @Operation(
+        summary = "Get blog post detail", security = [],
+        responses = [
+            ApiResponse(responseCode = "200", description = "Blog found"),
+            ApiResponse(responseCode = "404", description = "Blog not found")
+        ]
+    )
     fun detail(
+        @Parameter(description = "Blog slug", example = "my-first-post")
         @PathVariable slug: String,
+        @Parameter(description = "Language code (en, es, ca)", example = "en")
         @RequestHeader("Accept-Language", defaultValue = DEFAULT_LANGUAGE_CODE) acceptLanguage: String
     ): BlogDetailDto {
         val lang = parseLang(acceptLanguage)
@@ -30,6 +49,14 @@ class BlogController(private val blogService: BlogService) {
     }
 
     @PostMapping("", "/")
+    @Operation(
+        summary = "Create a blog post",
+        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        responses = [
+            ApiResponse(responseCode = "201", description = "Blog created"),
+            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+        ]
+    )
     fun create(@RequestBody request: BlogCreateRequest): ResponseEntity<BlogDetailDto> {
         val blog = blogService.create(request)
         val dto = blog.toDetailDto("en")
@@ -37,8 +64,17 @@ class BlogController(private val blogService: BlogService) {
     }
 
     @PutMapping("/{slug}")
+    @Operation(
+        summary = "Update a blog post",
+        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        responses = [
+            ApiResponse(responseCode = "200", description = "Blog updated"),
+            ApiResponse(responseCode = "404", description = "Blog not found"),
+            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+        ]
+    )
     fun update(
-        @PathVariable slug: String,
+        @Parameter(description = "Blog slug") @PathVariable slug: String,
         @RequestBody request: BlogUpdateRequest
     ): BlogDetailDto {
         val blog = blogService.update(slug, request)
@@ -47,7 +83,16 @@ class BlogController(private val blogService: BlogService) {
 
     @DeleteMapping("/{slug}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun delete(@PathVariable slug: String) {
+    @Operation(
+        summary = "Delete a blog post",
+        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        responses = [
+            ApiResponse(responseCode = "204", description = "Blog deleted"),
+            ApiResponse(responseCode = "404", description = "Blog not found"),
+            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+        ]
+    )
+    fun delete(@Parameter(description = "Blog slug") @PathVariable slug: String) {
         blogService.delete(slug)
     }
 }
