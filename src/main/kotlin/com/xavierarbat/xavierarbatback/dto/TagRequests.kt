@@ -7,9 +7,9 @@ data class TagDto(
 
 data class TagCreateRequest(
     val key: String,
-    val label: String? = null
+    val label: Map<String, String>? = null
 )
 
 data class TagUpdateRequest(
-    val label: String
+    val label: Map<String, String>
 )

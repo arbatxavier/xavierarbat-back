@@ -17,7 +17,7 @@ import tools.jackson.module.kotlin.jacksonObjectMapper
 
 @Configuration
 class SecurityConfig(
-    private val apiKeyAuthFilter: ApiKeyAuthFilter
+    private val jwtAuthFilter: JwtAuthFilter
 ) {
 
     @Bean
@@ -30,6 +30,7 @@ class SecurityConfig(
                 authorize("/swagger-ui.html", permitAll)
                 authorize("/v3/api-docs/**", permitAll)
                 authorize("/uploads/**", permitAll)
+                authorize(HttpMethod.POST, "/api/v1/auth/**", permitAll)
                 authorize(HttpMethod.GET, "/api/**", permitAll)
                 authorize(HttpMethod.OPTIONS, "/api/**", permitAll)
                 authorize(HttpMethod.POST, "/api/**", hasRole("ADMIN"))
@@ -37,7 +38,7 @@ class SecurityConfig(
                 authorize(HttpMethod.DELETE, "/api/**", hasRole("ADMIN"))
                 authorize(anyRequest, permitAll)
             }
-            addFilterBefore<UsernamePasswordAuthenticationFilter>(apiKeyAuthFilter)
+            addFilterBefore<UsernamePasswordAuthenticationFilter>(jwtAuthFilter)
             exceptionHandling {
                 authenticationEntryPoint = HttpServletAuthenticationEntryPoint()
                 accessDeniedHandler = HttpServletAccessDeniedHandler()
@@ -46,10 +47,6 @@ class SecurityConfig(
         return http.build()
     }
 
-    /**
-     * Returns a JSON error response when an unauthenticated request
-     * tries to access a protected endpoint.
-     */
     class HttpServletAuthenticationEntryPoint :
         org.springframework.security.web.AuthenticationEntryPoint {
 
@@ -58,14 +55,10 @@ class SecurityConfig(
             response: HttpServletResponse,
             authException: org.springframework.security.core.AuthenticationException
         ) {
-            writeErrorResponse(response, HttpStatus.UNAUTHORIZED, "Authentication required. Provide a valid X-API-Key header.", request.requestURI)
+            writeErrorResponse(response, HttpStatus.UNAUTHORIZED, "Authentication required. Provide a valid Bearer token.", request.requestURI)
         }
     }
 
-    /**
-     * Returns a JSON error response when an authenticated request
-     * does not have the required role.
-     */
     class HttpServletAccessDeniedHandler :
         org.springframework.security.web.access.AccessDeniedHandler {
 

@@ -30,10 +30,10 @@ class ContactController(private val contactService: ContactService) {
     @PostMapping("", "/")
     @Operation(
         summary = "Create a contact",
-        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        security = [SecurityRequirement(name = "BearerAuth")],
         responses = [
             ApiResponse(responseCode = "201", description = "Contact created"),
-            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+            ApiResponse(responseCode = "401", description = "Missing or invalid token")
         ]
     )
     fun create(@RequestBody request: ContactCreateRequest): ResponseEntity<ContactDto> {
@@ -45,11 +45,11 @@ class ContactController(private val contactService: ContactService) {
     @PutMapping("/{name}")
     @Operation(
         summary = "Update a contact",
-        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        security = [SecurityRequirement(name = "BearerAuth")],
         responses = [
             ApiResponse(responseCode = "200", description = "Contact updated"),
             ApiResponse(responseCode = "404", description = "Contact not found"),
-            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+            ApiResponse(responseCode = "401", description = "Missing or invalid token")
         ]
     )
     fun update(
@@ -65,11 +65,11 @@ class ContactController(private val contactService: ContactService) {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(
         summary = "Delete a contact",
-        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        security = [SecurityRequirement(name = "BearerAuth")],
         responses = [
             ApiResponse(responseCode = "204", description = "Contact deleted"),
             ApiResponse(responseCode = "404", description = "Contact not found"),
-            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+            ApiResponse(responseCode = "401", description = "Missing or invalid token")
         ]
     )
     fun delete(@Parameter(description = "Contact name") @PathVariable name: String) {

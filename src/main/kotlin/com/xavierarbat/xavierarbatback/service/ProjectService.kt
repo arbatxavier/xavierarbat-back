@@ -6,14 +6,18 @@ import com.xavierarbat.xavierarbatback.domain.enums.ImageDisplay
 import com.xavierarbat.xavierarbatback.dto.*
 import com.xavierarbat.xavierarbatback.exception.ResourceNotFoundException
 import com.xavierarbat.xavierarbatback.repository.ProjectRepository
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
 class ProjectService(
     private val projectRepository: ProjectRepository,
-    private val tagService: TagService
+    private val tagService: TagService,
+    private val imageService: ImageService
 ) {
+
+    private val log = LoggerFactory.getLogger(javaClass)
 
     fun findAll(lang: String): List<ProjectListDto> =
         projectRepository.findAll().map { it.toListDto(lang) }
@@ -63,9 +67,32 @@ class ProjectService(
 
     @Transactional
     fun delete(slug: String) {
-        if (!projectRepository.existsById(slug)) {
-            throw ResourceNotFoundException("Project not found: $slug")
+        val project = projectRepository.findById(slug).orElseThrow {
+            ResourceNotFoundException("Project not found: $slug")
         }
-        projectRepository.deleteById(slug)
+
+        // Delete associated images from disk
+        deleteProjectImages(project)
+
+        projectRepository.delete(project)
+    }
+
+    /**
+     * Deletes the main image and all alt images associated with a project
+     * if they are stored in /uploads/projects/.
+     */
+    private fun deleteProjectImages(project: Project) {
+        val allImagePaths = mutableListOf(project.image) + project.altImages
+
+        for (path in allImagePaths) {
+            if (path.startsWith("/uploads/projects/")) {
+                val filename = path.substringAfterLast("/")
+                try {
+                    imageService.delete("projects", filename)
+                } catch (e: Exception) {
+                    log.warn("Could not delete image '$path' for project '${project.slug}': ${e.message}")
+                }
+            }
+        }
     }
 }

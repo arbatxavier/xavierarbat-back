@@ -18,14 +18,15 @@ class OpenApiConfig {
         .info(
             Info()
                 .title("Xavier Arbat Portfolio API")
-                .version("1.0.0")
+                .version("2.0.0")
                 .description(
                     """
                     REST API for Xavier Arbat's multidisciplinary artist portfolio.
                     
                     Supports **i18n** (en, es, ca) via the `Accept-Language` header.
                     
-                    **Authentication:** Protected endpoints (POST, PUT, DELETE) require an `X-API-Key` header.
+                    **Authentication:** POST /api/v1/auth/login with username/password to get a JWT token.
+                    Use `Authorization: Bearer <token>` header for protected endpoints (POST, PUT, DELETE).
                     Public GET endpoints are open and do not require authentication.
                     
                     **Rate Limiting:** 60 requests per minute per IP address.
@@ -46,13 +47,13 @@ class OpenApiConfig {
         .components(
             Components()
                 .addSecuritySchemes(
-                    "ApiKeyAuth",
+                    "BearerAuth",
                     SecurityScheme()
-                        .type(SecurityScheme.Type.APIKEY)
-                        .`in`(SecurityScheme.In.HEADER)
-                        .name("X-API-Key")
-                        .description("API key for protected endpoints (POST, PUT, DELETE)")
+                        .type(SecurityScheme.Type.HTTP)
+                        .scheme("bearer")
+                        .bearerFormat("JWT")
+                        .description("JWT token obtained from POST /api/v1/auth/login")
                 )
         )
-        .addSecurityItem(SecurityRequirement().addList("ApiKeyAuth"))
+        .addSecurityItem(SecurityRequirement().addList("BearerAuth"))
 }

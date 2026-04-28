@@ -1,11 +1,7 @@
 package com.xavierarbat.xavierarbatback.controller
 
-import org.junit.jupiter.api.MethodOrderer
-import org.junit.jupiter.api.Order
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestMethodOrder
+import org.junit.jupiter.api.*
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
@@ -13,21 +9,37 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import tools.jackson.module.kotlin.jacksonObjectMapper
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class BlogCrudTest {
 
     @Autowired
     private lateinit var mockMvc: MockMvc
 
-    @Value("\${app.api-key}")
-    private lateinit var apiKey: String
+    private lateinit var token: String
 
     companion object {
         private const val TEST_SLUG = "test-blog-crud"
+        private val objectMapper = jacksonObjectMapper()
     }
+
+    @BeforeAll
+    fun login() {
+        val result = mockMvc.perform(
+            post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"username":"admin","password":"admin"}""")
+        ).andExpect(status().isOk).andReturn()
+
+        val body = objectMapper.readTree(result.response.contentAsByteArray)
+        token = body.get("token").asText()
+    }
+
+    private fun authHeader() = "Bearer $token"
 
     private val createBody = """
         {
@@ -41,7 +53,7 @@ class BlogCrudTest {
 
     @Test
     @Order(1)
-    fun `POST blog without API key should return 401`() {
+    fun `POST blog without token should return 401`() {
         mockMvc.perform(
             post("/api/v1/blogs")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -52,16 +64,15 @@ class BlogCrudTest {
 
     @Test
     @Order(2)
-    fun `POST blog with API key should return 201`() {
-        // Clean up first in case previous test run left data
+    fun `POST blog with token should return 201`() {
         mockMvc.perform(
             delete("/api/v1/blogs/$TEST_SLUG")
-                .header("X-API-Key", apiKey)
+                .header("Authorization", authHeader())
         )
 
         mockMvc.perform(
             post("/api/v1/blogs")
-                .header("X-API-Key", apiKey)
+                .header("Authorization", authHeader())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(createBody)
         ).andExpect(status().isCreated)
@@ -79,7 +90,7 @@ class BlogCrudTest {
 
     @Test
     @Order(4)
-    fun `PUT blog with API key should update it`() {
+    fun `PUT blog with token should update it`() {
         val updateBody = """
             {
                 "title": {"en": "Updated Blog", "es": "Blog Actualizado", "ca": "Blog Actualitzat"}
@@ -88,7 +99,7 @@ class BlogCrudTest {
 
         mockMvc.perform(
             put("/api/v1/blogs/$TEST_SLUG")
-                .header("X-API-Key", apiKey)
+                .header("Authorization", authHeader())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(updateBody)
         ).andExpect(status().isOk)
@@ -97,7 +108,7 @@ class BlogCrudTest {
 
     @Test
     @Order(5)
-    fun `PUT blog without API key should return 401`() {
+    fun `PUT blog without token should return 401`() {
         mockMvc.perform(
             put("/api/v1/blogs/$TEST_SLUG")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -107,10 +118,10 @@ class BlogCrudTest {
 
     @Test
     @Order(6)
-    fun `DELETE blog with API key should return 204`() {
+    fun `DELETE blog with token should return 204`() {
         mockMvc.perform(
             delete("/api/v1/blogs/$TEST_SLUG")
-                .header("X-API-Key", apiKey)
+                .header("Authorization", authHeader())
         ).andExpect(status().isNoContent)
     }
 
@@ -124,7 +135,7 @@ class BlogCrudTest {
 
     @Test
     @Order(8)
-    fun `DELETE blog without API key should return 401`() {
+    fun `DELETE blog without token should return 401`() {
         mockMvc.perform(delete("/api/v1/blogs/any-slug"))
             .andExpect(status().isUnauthorized)
     }

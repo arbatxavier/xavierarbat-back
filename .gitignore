@@ -45,3 +45,5 @@ out/
 src/main/resources/data.sql
 pgdata/
 *.log
+uploads/
+src/main/resources/application-dev.properties
