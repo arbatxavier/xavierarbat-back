@@ -9,7 +9,7 @@ Supports i18n (es/ca/en) via JSONB fields and `Accept-Language` header.
 - **Kotlin** 2.2 + **Spring Boot** 4.0
 - **Spring Data JPA** + **Hibernate** 7
 - **PostgreSQL** 16 (via Docker)
-- **Spring Security** 7 (API Key authentication)
+- **Spring Security** 7 (JWT Bearer token authentication)
 - **SpringDoc OpenAPI** 3.0 (Swagger UI live docs)
 
 ## Prerequisites
@@ -67,12 +67,41 @@ The raw OpenAPI 3.1 spec (JSON) is at `/v3/api-docs`.
 
 > Tests require PostgreSQL to be running (`docker-compose up -d`).
 
+## Authentication
+
+Protected endpoints (POST, PUT, DELETE) require a JWT Bearer token.
+
+### 1. Login to get a token
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin"}'
+```
+
+Response:
+```json
+{"token": "eyJhbGciOiJIUzM4NCJ9...", "expiresIn": 86400}
+```
+
+### 2. Use the token in subsequent requests
+
+```bash
+curl -X POST http://localhost:8080/api/v1/blogs \
+  -H "Authorization: Bearer eyJhbGciOiJIUzM4NCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{ ... }'
+```
+
+Tokens expire after 24 hours by default (configurable via `JWT_EXPIRATION_MS`).
+
 ## API Endpoints
 
 ### Public (no authentication required)
 
 | Method | Path | Description |
 |--------|------|-------------|
+| `POST` | `/api/v1/auth/login` | Login (get JWT token) |
 | `GET` | `/api/v1/projects` | List all projects |
 | `GET` | `/api/v1/projects/{slug}` | Get project detail |
 | `GET` | `/api/v1/blogs` | List all blog posts |
@@ -85,13 +114,13 @@ The raw OpenAPI 3.1 spec (JSON) is at `/v3/api-docs`.
 
 All GET endpoints accept an `Accept-Language` header (`en`, `es`, `ca`). Defaults to `en`.
 
-### Protected (requires `X-API-Key` header)
+### Protected (requires `Authorization: Bearer <token>` header)
 
 | Method | Path | Description |
 |--------|------|-------------|
 | `POST` | `/api/v1/projects` | Create a project |
 | `PUT` | `/api/v1/projects/{slug}` | Update a project |
-| `DELETE` | `/api/v1/projects/{slug}` | Delete a project |
+| `DELETE` | `/api/v1/projects/{slug}` | Delete a project (also deletes images) |
 | `POST` | `/api/v1/blogs` | Create a blog post |
 | `PUT` | `/api/v1/blogs/{slug}` | Update a blog post |
 | `DELETE` | `/api/v1/blogs/{slug}` | Delete a blog post |
@@ -100,7 +129,7 @@ All GET endpoints accept an `Accept-Language` header (`en`, `es`, `ca`). Default
 | `DELETE` | `/api/v1/contacts/{name}` | Delete a contact |
 | `POST` | `/api/v1/tags` | Create a tag |
 | `PUT` | `/api/v1/tags/{key}` | Update a tag label |
-| `DELETE` | `/api/v1/tags/{key}` | Delete a tag |
+| `DELETE` | `/api/v1/tags/{key}` | Delete a tag (unlinks from projects) |
 | `POST` | `/api/v1/images/{folder}` | Upload an image (multipart) |
 | `DELETE` | `/api/v1/images/{folder}/{filename}` | Delete an image |
 
@@ -110,9 +139,14 @@ All GET endpoints accept an `Accept-Language` header (`en`, `es`, `ca`). Default
 # List projects in Spanish
 curl -H "Accept-Language: es" http://localhost:8080/api/v1/projects
 
-# Create a blog post (requires API key)
+# Login
+TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin"}' | jq -r .token)
+
+# Create a blog post
 curl -X POST http://localhost:8080/api/v1/blogs \
-  -H "X-API-Key: change-me-in-production" \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "slug": "my-post",
@@ -122,9 +156,9 @@ curl -X POST http://localhost:8080/api/v1/blogs \
     "content": {"en": "Full **markdown** content.", "es": "Contenido en **markdown**.", "ca": "Contingut en **markdown**."}
   }'
 
-# Upload an image (requires API key)
+# Upload an image
 curl -X POST http://localhost:8080/api/v1/images/projects \
-  -H "X-API-Key: change-me-in-production" \
+  -H "Authorization: Bearer $TOKEN" \
   -F "file=@/path/to/image.jpg"
 
 # Serve an uploaded image (public)
@@ -137,7 +171,10 @@ Key settings in `src/main/resources/application.properties`:
 
 | Property | Default | Env Variable | Description |
 |----------|---------|--------------|-------------|
-| `app.api-key` | `change-me-in-production` | `API_KEY` | API key for protected endpoints |
+| `app.admin.username` | `admin` | `ADMIN_USERNAME` | Admin login username |
+| `app.admin.password` | `admin` | `ADMIN_PASSWORD` | Admin login password |
+| `app.jwt.secret` | (dev default) | `JWT_SECRET` | Secret key for JWT signing (min 32 chars) |
+| `app.jwt.expiration-ms` | `86400000` (24h) | `JWT_EXPIRATION_MS` | Token expiration in milliseconds |
 | `spring.datasource.url` | `localhost:5432` | `DB_HOST` | Database host |
 | `spring.datasource.username` | `user` | `DB_USER` | Database user |
 | `spring.datasource.password` | `password` | `DB_PASSWORD` | Database password |
@@ -146,18 +183,18 @@ Key settings in `src/main/resources/application.properties`:
 In production, override via environment variables:
 
 ```bash
-DB_HOST=localhost DB_USER=myuser DB_PASSWORD=strong-password API_KEY=your-secret-key ./gradlew bootRun
+DB_HOST=localhost DB_USER=myuser DB_PASSWORD=strong-password ADMIN_USERNAME=admin ADMIN_PASSWORD=secure-pass JWT_SECRET=your-32-char-secret-key-here!! ./gradlew bootRun
 ```
 
 ## Security
 
 - **CORS**: Only `https://xavierarbat.com` and `http://localhost:3000` can make requests from browsers
-- **API Key**: `POST`/`PUT`/`DELETE` endpoints require `X-API-Key` header
+- **JWT Auth**: `POST`/`PUT`/`DELETE` endpoints require `Authorization: Bearer <token>` header
 - **Rate Limiting**: 60 requests per minute per IP address
 
 ## i18n
 
-All text fields (title, description, content, display) are stored as JSONB maps:
+All text fields (title, description, content, display, tag labels) are stored as JSONB maps:
 
 ```json
 {"es": "Texto en español", "ca": "Text en català", "en": "Text in English"}
@@ -167,30 +204,30 @@ The API resolves the language from the `Accept-Language` header with fallback: r
 
 ## Tags
 
-Tags are stored in the database and can be managed via the API. Projects reference tags by key through a many-to-many relationship.
+Tags are stored in the database with i18n labels and can be managed via the API. Projects reference tags by key through a many-to-many relationship.
 
-Each tag has a `key` (PK, uppercase with underscores) and a human-readable `label`.
+Each tag has a `key` (PK, uppercase with underscores) and an i18n `label` (JSONB map).
 
 ```bash
 # List all available tags
 curl https://api.xavierarbat.com/api/v1/tags
 # Response: [{"key": "ILLUSTRATION", "label": "Illustration"}, ...]
 
-# Create a new tag (key is auto-normalized to uppercase)
+# Create a new tag with i18n label
 curl -X POST https://api.xavierarbat.com/api/v1/tags \
-  -H "X-API-Key: your-secret-key" \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"key": "WATERCOLOR", "label": "Watercolor"}'
+  -d '{"key": "WATERCOLOR", "label": {"en": "Watercolor", "es": "Acuarela", "ca": "Aquarel·la"}}'
 
 # Update a tag label
 curl -X PUT https://api.xavierarbat.com/api/v1/tags/WATERCOLOR \
-  -H "X-API-Key: your-secret-key" \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"label": "Aquarelle"}'
+  -d '{"label": {"en": "Aquarelle", "es": "Acuarela", "ca": "Aquarel·la"}}'
 
-# Delete a tag
+# Delete a tag (automatically unlinked from all projects)
 curl -X DELETE https://api.xavierarbat.com/api/v1/tags/WATERCOLOR \
-  -H "X-API-Key: your-secret-key"
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 When creating or updating a project, reference tags by their key:
@@ -202,6 +239,8 @@ When creating or updating a project, reference tags by their key:
 ```
 
 If a tag key does not exist, the API returns a `400` error listing the unknown keys.
+
+Deleting a tag automatically unlinks it from all projects. Deleting a project automatically deletes its associated images from disk.
 
 ## Image Uploads
 
@@ -238,7 +277,7 @@ UPLOADS_PATH=./uploads ./gradlew bootRun
 ```bash
 # Upload an image to the projects folder
 curl -X POST https://api.xavierarbat.com/api/v1/images/projects \
-  -H "X-API-Key: your-secret-key" \
+  -H "Authorization: Bearer $TOKEN" \
   -F "file=@my-artwork.jpg"
 # Response: {"url": "/uploads/projects/my-artwork.jpg"}
 
@@ -251,7 +290,7 @@ curl https://api.xavierarbat.com/api/v1/images/projects
 
 # Delete an image
 curl -X DELETE https://api.xavierarbat.com/api/v1/images/projects/my-artwork.jpg \
-  -H "X-API-Key: your-secret-key"
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ### Using image URLs in entities
@@ -274,11 +313,11 @@ When creating a project or blog, reference the uploaded image path:
 
 ```
 src/main/kotlin/com/xavierarbat/xavierarbatback/
-├── config/          # CORS, Security, Rate Limiter, Error Handler, JPA Converters, OpenAPI
-├── controller/      # REST controllers (Blog, Contact, Project, Image)
+├── config/          # CORS, Security, JWT, Rate Limiter, Error Handler, JPA Converters, OpenAPI
+├── controller/      # REST controllers (Auth, Blog, Contact, Project, Tag, Image)
 ├── domain/          # JPA entities and enums
 ├── dto/             # Data Transfer Objects and mappers
 ├── exception/       # Custom exceptions
 ├── repository/      # Spring Data JPA repositories
-└── service/         # Business logic (including image storage)
+└── service/         # Business logic (including JWT and image storage)
 ```

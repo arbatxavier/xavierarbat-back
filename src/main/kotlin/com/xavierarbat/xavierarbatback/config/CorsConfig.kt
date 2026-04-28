@@ -16,7 +16,7 @@ class CorsConfig(
         registry.addMapping("/api/**")
             .allowedOrigins("https://xavierarbat.com", "http://localhost:3000")
             .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-            .allowedHeaders("Accept-Language", "Content-Type", "X-API-Key")
+            .allowedHeaders("Accept-Language", "Content-Type", "Authorization")
             .allowCredentials(false)
             .maxAge(3600)
 

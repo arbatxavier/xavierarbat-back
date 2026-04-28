@@ -51,10 +51,10 @@ class BlogController(private val blogService: BlogService) {
     @PostMapping("", "/")
     @Operation(
         summary = "Create a blog post",
-        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        security = [SecurityRequirement(name = "BearerAuth")],
         responses = [
             ApiResponse(responseCode = "201", description = "Blog created"),
-            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+            ApiResponse(responseCode = "401", description = "Missing or invalid token")
         ]
     )
     fun create(@RequestBody request: BlogCreateRequest): ResponseEntity<BlogDetailDto> {
@@ -66,11 +66,11 @@ class BlogController(private val blogService: BlogService) {
     @PutMapping("/{slug}")
     @Operation(
         summary = "Update a blog post",
-        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        security = [SecurityRequirement(name = "BearerAuth")],
         responses = [
             ApiResponse(responseCode = "200", description = "Blog updated"),
             ApiResponse(responseCode = "404", description = "Blog not found"),
-            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+            ApiResponse(responseCode = "401", description = "Missing or invalid token")
         ]
     )
     fun update(
@@ -85,11 +85,11 @@ class BlogController(private val blogService: BlogService) {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(
         summary = "Delete a blog post",
-        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        security = [SecurityRequirement(name = "BearerAuth")],
         responses = [
             ApiResponse(responseCode = "204", description = "Blog deleted"),
             ApiResponse(responseCode = "404", description = "Blog not found"),
-            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+            ApiResponse(responseCode = "401", description = "Missing or invalid token")
         ]
     )
     fun delete(@Parameter(description = "Blog slug") @PathVariable slug: String) {

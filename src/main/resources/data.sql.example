@@ -10,21 +10,21 @@
 -- Tags (key IS the PK)
 -- =============================================
 INSERT INTO tag (key, label) VALUES
-('ILLUSTRATION', 'Illustration'),
-('INK', 'Ink'),
-('FAN_ART', 'Fan Art'),
-('ANIME', 'Anime'),
-('MANGA', 'Manga'),
-('PORTRAIT', 'Portrait'),
-('CINEMA', 'Cinema'),
-('HORROR', 'Horror'),
-('CONCEPT', 'Concept'),
-('ANIMALS', 'Animals'),
-('TECHNIQUE', 'Technique'),
-('POINTILLISM', 'Pointillism'),
-('LITERATURE', 'Literature'),
-('SKULL', 'Skull'),
-('REALISM', 'Realism')
+('ILLUSTRATION', '{"en": "Illustration", "es": "Ilustración", "ca": "Il·lustració"}'),
+('INK', '{"en": "Ink", "es": "Tinta", "ca": "Tinta"}'),
+('FAN_ART', '{"en": "Fan Art", "es": "Fan Art", "ca": "Fan Art"}'),
+('ANIME', '{"en": "Anime", "es": "Anime", "ca": "Anime"}'),
+('MANGA', '{"en": "Manga", "es": "Manga", "ca": "Manga"}'),
+('PORTRAIT', '{"en": "Portrait", "es": "Retrato", "ca": "Retrat"}'),
+('CINEMA', '{"en": "Cinema", "es": "Cine", "ca": "Cinema"}'),
+('HORROR', '{"en": "Horror", "es": "Terror", "ca": "Terror"}'),
+('CONCEPT', '{"en": "Concept", "es": "Concepto", "ca": "Concepte"}'),
+('ANIMALS', '{"en": "Animals", "es": "Animales", "ca": "Animals"}'),
+('TECHNIQUE', '{"en": "Technique", "es": "Técnica", "ca": "Tècnica"}'),
+('POINTILLISM', '{"en": "Pointillism", "es": "Puntillismo", "ca": "Puntillisme"}'),
+('LITERATURE', '{"en": "Literature", "es": "Literatura", "ca": "Literatura"}'),
+('SKULL', '{"en": "Skull", "es": "Calavera", "ca": "Calavera"}'),
+('REALISM', '{"en": "Realism", "es": "Realismo", "ca": "Realisme"}')
 ON CONFLICT (key) DO NOTHING;
 
 -- =============================================

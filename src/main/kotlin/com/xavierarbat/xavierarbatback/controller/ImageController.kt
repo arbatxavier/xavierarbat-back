@@ -24,11 +24,11 @@ class ImageController(private val imageService: ImageService) {
     @Operation(
         summary = "Upload an image",
         description = "Uploads an image to the specified folder (projects, blogs, contacts, home). Max 20 MB. Allowed types: JPEG, PNG, WebP, GIF, SVG.",
-        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        security = [SecurityRequirement(name = "BearerAuth")],
         responses = [
             ApiResponse(responseCode = "201", description = "Image uploaded, returns the public URL path"),
             ApiResponse(responseCode = "400", description = "Invalid file or folder"),
-            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+            ApiResponse(responseCode = "401", description = "Missing or invalid token")
         ]
     )
     fun upload(
@@ -57,11 +57,11 @@ class ImageController(private val imageService: ImageService) {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(
         summary = "Delete an image",
-        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        security = [SecurityRequirement(name = "BearerAuth")],
         responses = [
             ApiResponse(responseCode = "204", description = "Image deleted"),
             ApiResponse(responseCode = "404", description = "Image not found"),
-            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+            ApiResponse(responseCode = "401", description = "Missing or invalid token")
         ]
     )
     fun delete(

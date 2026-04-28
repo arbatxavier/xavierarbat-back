@@ -1,5 +1,6 @@
 package com.xavierarbat.xavierarbatback.domain
 
+import com.xavierarbat.xavierarbatback.config.JsonbMapConverter
 import jakarta.persistence.*
 
 @Entity
@@ -9,6 +10,7 @@ data class Tag(
     @Column(length = 50)
     val key: String,
 
-    @Column(length = 100, nullable = false)
-    val label: String = key
+    @Convert(converter = JsonbMapConverter::class)
+    @Column(columnDefinition = "jsonb", nullable = false)
+    val label: Map<String, String> = emptyMap()
 )

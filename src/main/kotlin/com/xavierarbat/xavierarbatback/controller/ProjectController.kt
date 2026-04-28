@@ -57,12 +57,12 @@ class ProjectController(private val projectService: ProjectService) {
     @PostMapping("", "/")
     @Operation(
         summary = "Create a project",
-        description = "Creates a new project. Requires API key authentication.",
-        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        description = "Creates a new project. Requires authentication.",
+        security = [SecurityRequirement(name = "BearerAuth")],
         responses = [
             ApiResponse(responseCode = "201", description = "Project created"),
             ApiResponse(responseCode = "400", description = "Invalid request or slug already exists"),
-            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+            ApiResponse(responseCode = "401", description = "Missing or invalid token")
         ]
     )
     fun create(@RequestBody request: ProjectCreateRequest): ResponseEntity<ProjectDetailDto> {
@@ -74,12 +74,12 @@ class ProjectController(private val projectService: ProjectService) {
     @PutMapping("/{slug}")
     @Operation(
         summary = "Update a project",
-        description = "Updates an existing project. Only provided fields are updated. Requires API key authentication.",
-        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        description = "Updates an existing project. Only provided fields are updated. Requires authentication.",
+        security = [SecurityRequirement(name = "BearerAuth")],
         responses = [
             ApiResponse(responseCode = "200", description = "Project updated"),
             ApiResponse(responseCode = "404", description = "Project not found"),
-            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+            ApiResponse(responseCode = "401", description = "Missing or invalid token")
         ]
     )
     fun update(
@@ -95,11 +95,11 @@ class ProjectController(private val projectService: ProjectService) {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(
         summary = "Delete a project",
-        security = [SecurityRequirement(name = "ApiKeyAuth")],
+        security = [SecurityRequirement(name = "BearerAuth")],
         responses = [
             ApiResponse(responseCode = "204", description = "Project deleted"),
             ApiResponse(responseCode = "404", description = "Project not found"),
-            ApiResponse(responseCode = "401", description = "Missing or invalid API key")
+            ApiResponse(responseCode = "401", description = "Missing or invalid token")
         ]
     )
     fun delete(

@@ -3,12 +3,13 @@ package com.xavierarbat.xavierarbatback.dto
 import com.xavierarbat.xavierarbatback.domain.Blog
 import com.xavierarbat.xavierarbatback.domain.Contact
 import com.xavierarbat.xavierarbatback.domain.Project
+import com.xavierarbat.xavierarbatback.domain.Tag
 
 private const val DEFAULT_LANG = "en"
 
 /**
- * Extrae el valor traducido de un mapa JSONB {lang -> text}.
- * Si el idioma solicitado no existe, cae a "es" y luego al primer valor disponible.
+ * Resolves a localized value from a JSONB map {lang -> text}.
+ * Fallback: requested lang -> "en" -> first available.
  */
 private fun Map<String, String>.localized(lang: String): String =
     this[lang] ?: this[DEFAULT_LANG] ?: values.firstOrNull() ?: ""
@@ -42,6 +43,15 @@ fun Contact.toDto(lang: String): ContactDto = ContactDto(
     value = value,
     link = link,
     showInFooter = showInFooter
+)
+
+// =============================================
+// Tag mappings
+// =============================================
+
+fun Tag.toDto(lang: String): TagDto = TagDto(
+    key = key,
+    label = label.localized(lang)
 )
 
 // =============================================
